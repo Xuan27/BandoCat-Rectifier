@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Index</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<link href='http://localhost/Georectification_Application/Georectification_Application_Styles.css' rel='stylesheet' />
+</head>
+<div id="fade_3"></div>
+<div id="modal_3">
+<img id="loader_3" src="350.gif" />
+<div id = "text" >Generating Tiles... <br> (this may take a moment)</div>
+</div>
+<body>
+<div id = 'title'>Sample Index Page</div>
+
+<!--Links-->
+
+<div id = 'links'>
+<a href = "#" id = "1-77.tif" onclick = "makeTiles(this.id);event.preventDefault();">1-77</a><br><br>
+<a href = "#" id = "11,AC.tif" onclick = "makeTiles(this.id); event.preventDefault();">11,AC</a><br><br>
+<a href = "#" id = "1-82.tif" onclick = "makeTiles(this.id); event.preventDefault();">1-82</a><br><br>
+<a href = "#" id = "XX-79.tif" onclick = "makeTiles(this.id); event.preventDefault();">XX-79</a><br><br>
+</div>
+
+<!--Functions-->
+
+<script type = "text/javascript">
+	var url = "http://localhost/georectification_application/tileCreator.php";
+	
+	function makeTiles(file_data){
+		openModal(3);
+		$.ajax({
+			type: "POST",
+			url: "http://localhost/georectification_application/tileCreator.php",
+			dataType: 'json',
+			data: {json_data: JSON.stringify(file_data)},
+			success:function(data) {
+				window.localStorage.setItem("JSON", JSON.stringify(data));
+				closeModal(3);
+				window.open("http://localhost/georectification_application/Georectification_Application_Main.html");
+			},
+			error:function(requestObject, error, errorThrown) {
+				alert(error);
+				alert(errorThrown);
+				closeModal(3);
+			}
+		});
+	}
+
+	function openModal(num) {
+    document.getElementById('modal_' + num).style.display = 'block';
+    document.getElementById('fade_' + num).style.display = 'block';
+	}
+
+	function closeModal(num) {
+		document.getElementById('modal_' + num).style.display = 'none';
+		document.getElementById('fade_' + num).style.display = 'none';
+	}
+	
+</script>
+
+</body>
+</html>

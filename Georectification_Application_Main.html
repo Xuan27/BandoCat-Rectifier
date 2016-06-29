@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Georectification</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<script src='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.css' rel='stylesheet' />
+<script src="rastercoords.js"></script>
+<script src="Leaflet.MakiMarkers.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<link href='http://localhost/Georectification_Application/Georectification_Application_Styles.css' rel='stylesheet' />
+<div id="fade_1"></div>
+<div id="modal_1"> 
+<img id="loader_1" src="350.gif" />
+<div>Rectifying...</div>
+</div>
+<div id="fade_2"></div>
+<div id="modal_2"> 
+<img id="loader_2" src="350.gif" />
+<div>Cancelling...</div>
+</div>
+</head>
+<body bgcolor = "#e5f1fd" >
+    
+<!--Title Section-->
+
+<div id = 'title'>BANDOCAT GEOREFERENCER</div>
+
+<!--Buttons and Button Functionality-->
+
+<div id = 'buttons'>
+<button onclick = "deletePrevious()" id = 'deletePrevious' name="deletePrevious">Delete Previous</button>
+<button onclick = "getMapType(mapType)" id = 'getMapType' name="getMapType">Switch Map Style</button>
+<button onclick = "openCatalog()" id = "openCatalog"> Open Catalog </button>
+<button onclick = "rectify()" id = "rectify"> Rectify </button>
+<button onclick = "cancel()" id = "cancel"> Cancel </button>
+<button  id = "notRectifiable"> Not Rectifiable </button>
+
+<!-- Button Functionality-->
+
+<script>
+	
+	function deletePrevious(){
+		var mapIndex = count - 1;
+		var rasterIndex = rasterCount - 1;
+		if(rasterIndex < 0)
+			return null;
+
+		if(mapIndex == rasterIndex)
+		{
+			map.removeLayer(markerArray[mapIndex]);
+			markerArray.splice(mapIndex, 1);
+			table.deleteRow(count+1);
+			gcpList.pop();
+			count--;
+			rasterSelected = true;
+			mapSelected = false;
+			colorCount--;
+		}
+		else
+		{
+		raster.removeLayer(rasterMarkerArray[rasterIndex]);
+		rasterMarkerArray.splice(rasterIndex, 1);
+		rasterCoords.pop();
+		rasterCount--;
+		rasterSelected = false;
+		mapSelected = true;
+		}
+	}
+
+	function getMapType(mapType){
+		if(rasterCount > 0)
+		{
+			var choice = confirm("Are you sure? Switching the map style will reset all currently placed GCPs");
+			if(choice)
+			{
+				if(mapType == "streets")
+				{
+					window.localStorage.setItem("mapType", "satellite");
+					location.reload();
+				}
+				else
+				{
+					window.localStorage.setItem("mapType", "streets");
+					location.reload();
+				}
+			}
+			else
+			return null;
+		}
+		else
+		{
+			if(mapType == "streets")
+			{
+				window.localStorage.setItem("mapType", "satellite");
+				location.reload();
+			}
+			else
+			{
+				window.localStorage.setItem("mapType", "streets");
+				location.reload();
+			}
+		}
+	}
+
+	function openCatalog(){
+		var pdf = "catalogInfo.html";
+		window.open(pdf);
+	}
+
+	function rectify(){
+		if(rasterCount > count)
+		{
+			alert("Uneven amount of points selected");
+				return null;
+		}
+		if(count < 3)
+		{
+			var choice = confirm("Less than 3 GCPs selected are you sure you want to rectify?\n\n Select 'Okay' to rectify or 'Cancel' to continue selecting GCPs");
+			{
+
+				if(choice)
+				{
+					openModal(1);
+					var gdalTranslateScript = translateScriptCreator();
+					var gdalWarpScript = warpScriptCreator();
+					var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
+					$.post("http://localhost/georectification_application/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+						alert(results),closeModal(1), window.close()});
+				}
+			}
+		}
+		else
+		{
+			openModal(1);
+			var gdalTranslateScript = translateScriptCreator();
+			var gdalWarpScript = warpScriptCreator();
+			var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
+			$.post("http://localhost/georectification_application/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+				alert(results),closeModal(1),window.close()});
+		}
+
+	}
+
+	function translateScriptCreator(){
+			var prefix = "gdaltranslate -of GTiff -a_srs EPSG:4326 ";
+			var suffix = translateInputFile + " " + translateOutputFile;
+			var complete = "";
+			for(var i = 0; i < count; i++)
+			{
+				prefix = prefix + " -gcp " + JSON.stringify(gcpList[i].x) + " " + JSON.stringify(gcpList[i].y) + " " + JSON.stringify(gcpList[i].lng) + " " + JSON.stringify(gcpList[i].lat);
+			}
+			complete = prefix + " " + suffix;
+			return complete;
+	}
+
+	function warpScriptCreator(){
+		var prefix = "gdalwarp -s_srs EPSG:4326 -t_srs EPSG:4326 -tps ";
+		var complete = prefix + " " + translateOutputFile + " " + warpOutputFile;
+		return complete;
+	}
+
+	function scriptObjectConstructor(translate, warp, tiles){
+		this.translate = translate;
+		this.warp = warp;
+		this.tiles = tiles;
+	}
+
+	function addScriptObject(translate, warp, tiles){
+		var scriptObject = new scriptObjectConstructor(translate, warp, tiles);
+		return scriptObject;
+	}
+	
+	function cancel(){
+		openModal(2);
+		var gdalTranslateScript = translateScriptCreator();
+		var gdalWarpScript = warpScriptCreator();
+		var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
+		$.post("http://localhost/georectification_application/cancel.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+				closeModal(2), window.close()});
+	}
+	
+	function openModal(num) {
+        document.getElementById('modal_' + num).style.display = 'block';
+        document.getElementById('fade_' + num).style.display = 'block';
+	}
+
+	function closeModal(num) {
+		document.getElementById('modal_' + num ).style.display = 'none';
+		document.getElementById('fade_' + num).style.display = 'none';
+	}
+
+</script>
+</div>
+
+<!-- Map Display and Functionality -->
+
+<div id="map">
+<script id "test" language="javascript" type="text/javascript">
+
+	L.mapbox.accessToken = "pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g";
+	L.MakiMarkers.accessToken = "pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g";
+
+	var mapType = window.localStorage.getItem("mapType");
+
+	if( mapType == "streets")
+	{
+		var mapid = "mapbox.streets"
+		var map = L.mapbox.map("map", mapid).addControl(L.mapbox.geocoderControl("mapbox.places"));
+	}
+	else
+	{
+		var mapid = "mapbox.streets-satellite"
+		var map = L.mapbox.map("map", mapid).addControl(L.mapbox.geocoderControl("mapbox.places"));
+	}
+
+	var markerColors = new Array('#e74c3c','#2980b9', '#2ecc71','#ffee58','#9b59b6', '#FE9A2E', '#f1948a', '#80deea', '#abebc6',  '#f9e79f','#b388ff', '#ffcc80');
+	var colorCount = 0;
+	var count = 0;
+	var mapSelected = true;
+	var marker;
+	var markerArray = new Array();
+	var gcpList = [];
+	var UTM = "+proj=utm +zone=14 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+
+	map.setView([27.73725068372226, -97.43062019348145], 12)
+	map.addEventListener("click", function(event)
+	{
+		Maki_Icon = icon = L.MakiMarkers.icon({icon: colorCount+1, color: markerColors[colorCount], size: "m"});
+		if(!mapSelected)
+		{
+			//creates new object of gcpList
+			addGCP(count, event.latlng.lat, event.latlng.lng, rasterCoords[rasterCount-1].x, rasterCoords[rasterCount-1].y);
+
+			//creates marker and popup
+			marker = L.marker(event.latlng, {icon:icon});
+			markerArray.push(marker);
+			map.addLayer(marker);
+			marker.bindPopup("Point Number: " + (count+1)).openPopup;
+
+			//alert(colorCount);
+			colorCount++;
+			if(colorCount > 11)
+				alert("Maximum amount of points reached");
+			count++;
+			rasterSelected = false;
+			mapSelected = true;
+
+			//creates table
+			var table = document.getElementById("table");
+			var row = table.insertRow(count+1);
+			var cell1 = row.insertCell(0);
+			var cell2 = row.insertCell(1);
+			var cell3 = row.insertCell(2);
+			var cell4 = row.insertCell(3);
+			var cell5 = row.insertCell(4);
+			cell1.innerHTML = count;
+			cell2.innerHTML = gcpList[count-1].lat;
+			cell3.innerHTML = gcpList[count-1].lng;
+			cell4.innerHTML = gcpList[count-1].x;
+			cell5.innerHTML = gcpList[count-1].y;
+		}
+		else
+		{
+			alert("Select point from raster");
+		};
+	});
+
+	//retrieves index given a latlng value
+	function getIndex(latlng)
+	{
+		for(var i = 0; i < coords.length +1; i++)
+		{
+			if(coords[i] == latlng)
+			{
+				return i;
+			}
+		}
+		return null;
+	};
+
+	function gcpConstructor(id, lat, lng, x, y)
+	{
+		this.id = id;
+		this.lat = lat;
+		this.lng = lng;
+		this.x = x;
+		this.y = y;
+	};
+
+	function addGCP(id, lat, lng, x, y)
+	{
+		var gcp = new gcpConstructor(id, lat, lng, x, y);
+		gcpList.push(gcp);
+	};
+
+</script>
+</div>
+
+<!-- Raster Display and Functionality -->
+
+<div id = "raster">
+<script>
+
+	//retrieve relevant raster information from index page
+	file_data = window.localStorage.getItem("JSON");
+	rasterJSON = JSON.parse(file_data);	
+	var translateInputFile = rasterJSON.fileName;
+	var translateOutputFile = "translated_" + rasterJSON.fileName;
+	var warpOutputFile = "warped_" + rasterJSON.fileName;
+	
+	var rasterCount = 0;
+	var rasterSelected = false;
+	var rasterMarkerArray = new Array();
+	var rasterCoords = new Array();
+	var minZoom = 0,
+		maxZoom = 5,
+		img = [
+			rasterJSON.width,  // original width of raster
+			 rasterJSON.height  // original height of raster
+		];
+
+	// create the raster
+	var raster = L.map("raster",{
+			minZoom: minZoom,
+			maxZoom: maxZoom,
+		});
+
+	// assign raster and raster dimensions
+	var rc = new L.RasterCoords(raster, img);
+
+	// set the bounds on raster
+	rc.setMaxBounds();
+
+	raster.setView(rc.unproject([img[0]/2, img[1]/2]), 2);
+
+	raster.on("click", function(event)
+	{
+		Maki_Icon = icon = L.MakiMarkers.icon({icon: colorCount+1, color: markerColors[colorCount], size: "m"});
+
+		if(!rasterSelected)
+		{
+			//pushes data from click into appropriate arrays
+			var coords = rc.project(event.latlng);
+			rasterCoords.push(rc.project(event.latlng));
+
+			//creates marker and popup
+			var rasterMarker = L.marker(rc.unproject(coords), {icon:icon})
+			rasterMarkerArray.push(rasterMarker);
+			raster.addLayer(rasterMarker);
+			rasterMarker.bindPopup("Point Number: " + (rasterCount+1)).openPopup;
+
+			rasterCount++;
+			rasterSelected = true;
+			mapSelected = false;
+		}
+		else
+		{
+			alert("Select point on map");
+		}
+	});
+	
+	var tiles = './tiles_' + rasterJSON.fileName + '/{z}/{x}/{y}.png';
+	// the tile layer containing the raster generated with gdal2tiles --leaflet ...
+	L.tileLayer(tiles, {
+		noWrap: true,
+		attribution: 'raster <a href="https://commons.wikimedia.org/wiki/'+
+			'File:11,AC.tif">'
+
+	}).addTo(raster);
+
+</script>
+</div>
+
+<!-- GCP Table -->
+
+<div id = "Table_Container">
+<table class = "tg" id ="table" style = "width: 100%; height:23%; bottom: 0;">
+	<tbody style = "align-items: center; background-color: #ccffff">
+	<tr style = "background-color: #ccffcc">
+		<th>Point Number</th>
+		<th>Latitude</th>
+		<th>Longitude</th>
+		<th>Raster X</th>
+		<th>Raster Y</th>
+	<tr/>
+</table>
+</div>
+
+</body>
+</html>
