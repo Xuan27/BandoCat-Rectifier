@@ -19,9 +19,9 @@
 	
 	$zoom = log(max($dimensions[0], $dimensions[1])/256, 2);
 	$zoom = ceil($zoom);
-
-	$command = "gdal2tiles-multiprocess.py -l -p raster -z 0-" . $zoom . " -w none -e " . $image . " " . "../tiles/".$subdir;
-
+	
+	$command = "cd ../ & cd GDAL & gdal2tiles-multiprocess.py -l -p raster -z 0-" . $zoom . " -w none -e " . $image . " " . "../tiles/".$subdir;
 	exec($command);
+	
 	echo json_encode($imageInfo);	
 ?>
