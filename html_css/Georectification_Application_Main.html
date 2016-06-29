@@ -6,10 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <script src='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.js'></script>
 <link href='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.css' rel='stylesheet' />
-<script src="rastercoords.js"></script>
-<script src="Leaflet.MakiMarkers.js"></script>
+<script src="../javascript/rastercoords.js"></script>
+<script src="../javascript/Leaflet.MakiMarkers.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
-<link href='http://localhost/Georectification_Application/Georectification_Application_Styles.css' rel='stylesheet' />
+<link href='Georectification_Application_Styles.css' rel='stylesheet' />
 <div id="fade_1"></div>
 <div id="modal_1"> 
 <img id="loader_1" src="350.gif" />
@@ -125,8 +125,8 @@
 					openModal(1);
 					var gdalTranslateScript = translateScriptCreator();
 					var gdalWarpScript = warpScriptCreator();
-					var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
-					$.post("http://localhost/georectification_application/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+					var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName.substring(10));
+					$.post("../php/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
 						alert(results),closeModal(1), window.close()});
 				}
 			}
@@ -136,8 +136,8 @@
 			openModal(1);
 			var gdalTranslateScript = translateScriptCreator();
 			var gdalWarpScript = warpScriptCreator();
-			var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
-			$.post("http://localhost/georectification_application/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+			var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName.substring(10));
+			$.post("../php/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
 				alert(results),closeModal(1),window.close()});
 		}
 
@@ -176,8 +176,8 @@
 		openModal(2);
 		var gdalTranslateScript = translateScriptCreator();
 		var gdalWarpScript = warpScriptCreator();
-		var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
-		$.post("http://localhost/georectification_application/cancel.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
+		var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName.substring(10));
+		$.post("../php/cancel.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
 				closeModal(2), window.close()});
 	}
 	
@@ -307,8 +307,8 @@
 	file_data = window.localStorage.getItem("JSON");
 	rasterJSON = JSON.parse(file_data);	
 	var translateInputFile = rasterJSON.fileName;
-	var translateOutputFile = "translated_" + rasterJSON.fileName;
-	var warpOutputFile = "warped_" + rasterJSON.fileName;
+	var translateOutputFile = "../GeoTIFFs/translated_" + rasterJSON.fileName.substring(10);
+	var warpOutputFile = "../GeoTIFFs/warped_" + rasterJSON.fileName.substring(10);
 	
 	var rasterCount = 0;
 	var rasterSelected = false;
@@ -361,7 +361,7 @@
 		}
 	});
 	
-	var tiles = './tiles_' + rasterJSON.fileName + '/{z}/{x}/{y}.png';
+	var tiles = '../tiles/' + rasterJSON.fileName.substring(10) + '/{z}/{x}/{y}.png';
 	// the tile layer containing the raster generated with gdal2tiles --leaflet ...
 	L.tileLayer(tiles, {
 		noWrap: true,
@@ -390,3 +390,4 @@
 
 </body>
 </html>
+
