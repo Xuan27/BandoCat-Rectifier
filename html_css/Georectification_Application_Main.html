@@ -125,7 +125,7 @@
 					openModal(1);
 					var gdalTranslateScript = translateScriptCreator();
 					var gdalWarpScript = warpScriptCreator();
-					var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName.substring(10));
+					var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
 					$.post("../php/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
 						alert(results),closeModal(1), window.close()});
 				}
@@ -136,7 +136,7 @@
 			openModal(1);
 			var gdalTranslateScript = translateScriptCreator();
 			var gdalWarpScript = warpScriptCreator();
-			var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName.substring(10));
+			var scriptObject = addScriptObject(gdalTranslateScript, gdalWarpScript, rasterJSON.fileName);
 			$.post("../php/submitRectification.php", { jsonData: JSON.stringify(scriptObject)}, function(results){
 				alert(results),closeModal(1),window.close()});
 		}
@@ -306,9 +306,9 @@
 	//retrieve relevant raster information from index page
 	file_data = window.localStorage.getItem("JSON");
 	rasterJSON = JSON.parse(file_data);	
-	var translateInputFile = rasterJSON.fileName;
-	var translateOutputFile = "../GeoTIFFs/translated_" + rasterJSON.fileName.substring(10);
-	var warpOutputFile = "../GeoTIFFs/warped_" + rasterJSON.fileName.substring(10);
+	var translateInputFile = "../images/" + rasterJSON.fileName;
+	var translateOutputFile = "../GeoTIFFs/translated_" + rasterJSON.fileName;
+	var warpOutputFile = "../GeoTIFFs/warped_" + rasterJSON.fileName;
 	
 	var rasterCount = 0;
 	var rasterSelected = false;
@@ -361,7 +361,7 @@
 		}
 	});
 	
-	var tiles = '../tiles/' + rasterJSON.fileName.substring(10) + '/{z}/{x}/{y}.png';
+	var tiles = '../tiles/' + rasterJSON.fileName + '/{z}/{x}/{y}.png';
 	// the tile layer containing the raster generated with gdal2tiles --leaflet ...
 	L.tileLayer(tiles, {
 		noWrap: true,
@@ -390,4 +390,5 @@
 
 </body>
 </html>
+
 
