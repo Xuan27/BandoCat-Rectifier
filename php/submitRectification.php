@@ -4,7 +4,7 @@
 
 	$command = $script -> translate;
 	$command2 = $script -> warp;
-	$tiles ="tiles_" . $script -> tiles;
+	$tiles ="../tiles/" . $script -> tiles;
 
 	$t0 = microtime(true);
 	if(exec($command))
@@ -23,7 +23,26 @@
 	$t1 = microtime(true);
 
 	printf("  %.1f seconds", $t1 - $t0);
-	
-	$deleteTiles = "RD /S /Q \"C:\wamp\www\Georectification_Application\\$tiles\\\"" ;
-	exec($deleteTiles)
+	 
+	class A
+	{
+		public static function deleteDir($tiles) {
+		if (! is_dir($tiles)) {
+			throw new InvalidArgumentException("$dirPath must be a directory");
+		}
+		if (substr($tiles, strlen($tiles) - 1, 1) != '/') {
+			$tiles .= '/';
+		}
+		$files = glob($tiles . '*', GLOB_MARK);
+		foreach ($files as $file) {
+			if (is_dir($file)) {
+				self::deleteDir($file);
+			} else {
+				unlink($file);
+			}
+		}
+		rmdir($tiles);
+		}
+	}
+	A::deleteDir($tiles);
 ?>
