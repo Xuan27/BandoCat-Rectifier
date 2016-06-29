@@ -1,8 +1,9 @@
 <?php
+	include('class.php');
+	
 	$script = json_decode( $_POST['jsonData']);
 
-	$tiles ="tiles_" . $script -> tiles;
+	$tiles ="../tiles/" . $script -> tiles;
 	
-	$deleteTiles = "RD /S /Q \"C:\wamp\www\Georectification_Application\\$tiles\\\"" ;
-	system($deleteTiles);
+	A::deleteDir($tiles);
 ?>
