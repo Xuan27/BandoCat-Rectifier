@@ -1,27 +1,30 @@
 <?php
-	$image = json_decode($_POST['json_data']);
+	include('class.php');
 	
-	$subdir = substr($image, 10);
-	// if(is_dir($subdir)) {
-			// $deleteTiles = "RD /S /Q \"C:\wamp\www\Georectification_Application\\$subdir\\\"" ;
-			// exec($deleteTiles);
-	// }
-	if(!is_dir("../tiles/".$subdir))
-	{
-		mkdir("../tiles/".$subdir);
-	}
+	$script = json_decode( $_POST['jsonData']);
+	//print_r($script);
+
+	$command = $script -> translate;
+	$command2 = $script -> warp;
+	$tiles ="../tiles/" . $script -> tiles;
+
+	$t0 = microtime(true);
+	if(exec($command))
+	echo "SUCCESS";
+	else
+	echo "FAILURE";
 	
-	$dimensions =  getimagesize ($image);
-	$imageInfo = array(
-	'fileName' => $image,
-	'height' => $dimensions[1], 
-	'width' => $dimensions[0]);
-	
-	$zoom = log(max($dimensions[0], $dimensions[1])/256, 2);
-	$zoom = ceil($zoom);
-	
-	$command = "cd ../ & cd GDAL & gdal2tiles-multiprocess.py -l -p raster -z 0-" . $zoom . " -w none -e " . $image . " " . "../tiles/".$subdir;
-	exec($command);
-	
-	echo json_encode($imageInfo);	
+	$t1 = microtime(true);
+	printf("  %.1f seconds", $t1 - $t0);
+	echo" \n\n";
+	$t0 = microtime(true);
+	if(exec($command2))
+	echo "SUCCESS";
+	else
+	echo "FAILURE";
+	$t1 = microtime(true);
+
+	printf("  %.1f seconds", $t1 - $t0);
+	 
+	A::deleteDir($tiles);
 ?>
