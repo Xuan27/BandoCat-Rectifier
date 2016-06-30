@@ -36,6 +36,10 @@
 <button onclick = "rectify()" id = "rectify"> Rectify </button>
 <button onclick = "cancel()" id = "cancel"> Cancel </button>
 <button  id = "notRectifiable"> Not Rectifiable </button>
+</div>
+<form method = "post">
+  <button onclick="Help_Window()">Help</button>
+</form>
 
 <!-- Button Functionality-->
 
@@ -191,8 +195,11 @@
 		document.getElementById('fade_' + num).style.display = 'none';
 	}
 
+	function Help_Window() {
+    window.open("", resizable= "yes", scrollbars="yes", height= "450px", width= "600px" ,false);
+	}
 </script>
-</div>
+
 
 <!-- Map Display and Functionality -->
 
